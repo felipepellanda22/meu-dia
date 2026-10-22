@@ -9,202 +9,292 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
 <script src="https://accounts.google.com/gsi/client" async></script>
 <style>
+/* Layout: one phone column. Tab "Meu dia" = big mic, last result, Tarefas/Agenda switch. Tab "Ajustes" = setup cards. Fixed tab bar at the bottom. */
 :root{
-  --bg:#EDF1EF; --surface:#FFFFFF; --ink:#14201D; --muted:#5A6965; --line:#D3DCD9;
-  --accent:#0B6B5F; --accent-ink:#FFFFFF; --accent-soft:#DCEDE9; --warn:#A8500E; --danger:#B3261E; --rec:#C62828;
+  --bg:#EDF1EF; --surface:#FFFFFF; --sunk:#E3E9E7; --ink:#14201D; --muted:#5A6965; --line:#D3DCD9;
+  --accent:#0B6B5F; --accent-ink:#FFFFFF; --accent-soft:#DCEDE9; --warn:#A8500E; --danger:#B3261E; --rec:#C62828; --ok:#1E7B4A;
   --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --f-body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
-  --r:14px; color-scheme:light;
+  --r:16px; --tabbar:64px; color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root{
-  --bg:#0E1513; --surface:#16201E; --ink:#E4EDEA; --muted:#93A4A0; --line:#283532;
-  --accent:#43B9A6; --accent-ink:#04201B; --accent-soft:#183A34; --warn:#E89A5C; --danger:#F08A80; --rec:#FF6B6B; color-scheme:dark}}
+  --bg:#0E1513; --surface:#16201E; --sunk:#111A18; --ink:#E4EDEA; --muted:#93A4A0; --line:#283532;
+  --accent:#43B9A6; --accent-ink:#04201B; --accent-soft:#183A34; --warn:#E89A5C; --danger:#F08A80; --rec:#FF6B6B; --ok:#5FD39A; color-scheme:dark}}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0;background:var(--bg)}
-body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
-  padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-h1{font-family:var(--f-display);font-weight:700;font-size:1.9rem;letter-spacing:-.02em;margin:0;line-height:1.05}
-.today{color:var(--muted);font-size:.92rem;display:block;margin-top:2px}
-h2{font-family:var(--f-display);font-weight:600;font-size:1.2rem;margin:0}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent;
+  padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(var(--tabbar) + 24px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.wrap{max-width:560px;margin:0 auto}
+.view{display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--f-display);font-weight:700;font-size:1.75rem;letter-spacing:-.02em;margin:0;line-height:1.1}
+h2{font-family:var(--f-display);font-weight:600;font-size:1.15rem;margin:0}
+.sub{color:var(--muted);font-size:.92rem;margin:2px 0 0}
 .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
-section{display:flex;flex-direction:column;gap:10px}
-.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-button{font:inherit;cursor:pointer;border-radius:999px;border:1px solid transparent;padding:10px 18px;font-weight:600}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.primary{background:var(--accent);color:var(--accent-ink)}
-.primary:disabled{opacity:.5;cursor:default}
-.ghost{background:transparent;color:var(--accent);border-color:var(--line)}
-.icon-btn{background:transparent;border:1px solid var(--line);color:var(--muted);width:42px;height:42px;padding:0;display:grid;place-items:center}
-
-.capture{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px;align-items:stretch}
-.mic-row{display:flex;align-items:center;gap:14px}
-.mic{width:76px;height:76px;border-radius:50%;padding:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none;box-shadow:0 6px 18px -8px var(--accent)}
-.mic svg{width:34px;height:34px}
-.mic.on{background:var(--rec)}
-@media (prefers-reduced-motion:no-preference){.mic.on{animation:pulse 1.2s ease-in-out infinite}}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--rec) 45%,transparent)}50%{box-shadow:0 0 0 14px color-mix(in srgb,var(--rec) 0%,transparent)}}
-.mic-text{min-width:0}
-.mic-text strong{display:block;font-size:1.05rem}
-.mic-text span{font-size:.85rem;color:var(--muted)}
-textarea{width:100%;min-height:84px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);color:var(--ink);font:inherit}
-.cap-foot{display:flex;justify-content:flex-end}
-.status{font-size:.9rem;color:var(--muted);min-height:1.2em}
-.status.err{color:var(--danger)}
-
-.preview{border:1.5px dashed var(--accent);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--accent-soft)}
-.pv-list{display:flex;flex-direction:column;gap:8px}
-.pv-item{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border-radius:10px;padding:10px 12px}
-.pv-item .body{flex:1;min-width:0;overflow-wrap:anywhere}
-.pv-kind{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--accent)}
-.pv-title{font-weight:600}
 .meta{font-size:.84rem;color:var(--muted)}
-.x{background:transparent;border:0;color:var(--muted);padding:4px 8px;font-size:1.2rem;line-height:1}
-.pv-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-
-.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.group{display:flex;flex-direction:column;gap:6px}
-.stack{display:flex;flex-direction:column;gap:16px}
-.task{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
-.task input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--accent);flex:none}
-.task .body{flex:1;min-width:0;overflow-wrap:anywhere}
 .late{color:var(--warn);font-weight:600}
-.day-name{font-size:.8rem;font-weight:600;color:var(--muted);text-transform:capitalize}
-.day-name.is-today{color:var(--accent)}
-.ev{display:grid;grid-template-columns:4.4rem 1fr;gap:12px;align-items:baseline;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:inherit;text-decoration:none}
-.ev .t{font-family:var(--f-mono);font-size:.9rem;color:var(--accent);font-variant-numeric:tabular-nums}
-.ev .s{min-width:0;overflow-wrap:anywhere}
-.empty{color:var(--muted);font-size:.92rem;padding:12px;border:1px dashed var(--line);border-radius:10px}
-.pill{font-family:var(--f-mono);font-size:.78rem;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:999px}
-.banner{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+button{font:inherit;cursor:pointer;border-radius:999px;border:1px solid transparent;padding:10px 18px;font-weight:600;color:inherit;background:none}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.5;cursor:default}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.ghost{color:var(--accent);border-color:var(--line);background:var(--surface)}
+.link{color:var(--accent);padding:6px 8px;border-radius:8px;font-size:.92rem}
+.danger{color:var(--danger)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.empty{color:var(--muted);font-size:.92rem;padding:14px;border:1px dashed var(--line);border-radius:12px;text-align:center}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block;background:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;color:var(--muted)}
 
-.settings{display:flex;flex-direction:column;gap:14px}
-.field{display:flex;flex-direction:column;gap:6px}
-.field input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);color:var(--ink);font:inherit;font-size:.95rem}
-.field small{color:var(--muted);font-size:.82rem}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-/* Divisões */
+/* ---- Captura ---- */
+.capture{display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 16px 16px;background:var(--surface);border:1px solid var(--line);border-radius:24px;text-align:center}
+.mic{width:112px;height:112px;border-radius:50%;padding:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 10px 30px -12px var(--accent);transition:transform .15s}
+.mic:active{transform:scale(.96)}
+.mic svg{width:46px;height:46px}
+.mic.on{background:var(--rec);box-shadow:0 10px 30px -12px var(--rec)}
+.mic.busy{background:var(--sunk);color:var(--muted);box-shadow:none}
+@media (prefers-reduced-motion:no-preference){
+  .mic.on{animation:pulse 1.3s ease-in-out infinite}
+  .mic.busy svg{animation:spin 1s linear infinite}
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--rec) 40%,transparent)}50%{box-shadow:0 0 0 18px color-mix(in srgb,var(--rec) 0%,transparent)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mic-label{font-family:var(--f-display);font-weight:600;font-size:1.2rem}
+.live{font-size:1.05rem;min-height:1.5em;max-width:100%;overflow-wrap:anywhere;color:var(--ink)}
+.live:empty::before{content:attr(data-hint);color:var(--muted);font-size:.9rem}
+.status{font-size:.9rem;color:var(--muted)}
+.status.err{color:var(--danger)}
+.or{display:flex;align-items:center;gap:10px;width:100%;color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.type-form{width:100%}
+.type-row{display:flex;gap:8px;align-items:flex-end;background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:6px 6px 6px 14px}
+.type-row:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.type-row textarea{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;resize:none;padding:7px 0;max-height:140px;line-height:1.4}
+.type-row textarea::placeholder{color:var(--muted)}
+.send{width:38px;height:38px;padding:0;flex:none;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink)}
+.send svg{width:18px;height:18px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---- Resultado ---- */
+.result{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.result-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.result-head strong{display:flex;align-items:center;gap:8px;color:var(--ok);min-width:0}
+.result-head .link{white-space:nowrap;flex:none}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg);border-radius:12px}
+.item .ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;background:var(--accent-soft);color:var(--accent)}
+.item .ico svg{width:17px;height:17px}
+.item .body{flex:1;min-width:0;overflow-wrap:anywhere}
+.item .ttl{font-weight:600}
+.item.undone{opacity:.45}
+.item.undone .ttl{text-decoration:line-through}
+.div-select{display:flex;align-items:center;gap:6px;margin-top:6px}
+.div-select select{border:1px solid var(--line);border-radius:8px;padding:4px 8px;background:var(--surface);color:var(--ink);font:inherit;font-size:.84rem;max-width:100%}
+.x{color:var(--muted);padding:6px 10px;font-size:.84rem;border:1px solid var(--line);background:var(--surface)}
+
+/* ---- Abas Tarefas / Agenda ---- */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sunk);border-radius:999px;padding:4px;gap:4px}
+.seg button{padding:9px 10px;color:var(--muted);display:flex;justify-content:center;align-items:center;gap:8px}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.count{font-family:var(--f-mono);font-size:.76rem;background:var(--accent-soft);color:var(--accent);padding:1px 7px;border-radius:999px}
+.panel{display:flex;flex-direction:column;gap:12px}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chip{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;font-size:.85rem;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);padding:6px 12px;font-size:.85rem;display:inline-flex;align-items:center;gap:6px}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chip .n{font-family:var(--f-mono);font-size:.75rem;opacity:.7}
-.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block;background:var(--muted)}
-.tag{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:600;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:16px}
 .folder{display:flex;flex-direction:column;gap:6px}
 .folder-head{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem}
 .folder-head .n{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);font-weight:500}
-.div-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.task{display:flex;align-items:flex-start;gap:12px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.task input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--accent);flex:none}
+.task .body{flex:1;min-width:0;overflow-wrap:anywhere}
+.day-name{font-size:.8rem;font-weight:600;color:var(--muted);text-transform:capitalize}
+.day-name.is-today{color:var(--accent)}
+.ev{display:grid;grid-template-columns:4.4rem 1fr;gap:12px;align-items:baseline;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;color:inherit;text-decoration:none}
+.ev .t{font-family:var(--f-mono);font-size:.9rem;color:var(--accent);font-variant-numeric:tabular-nums}
+.ev .s{min-width:0;overflow-wrap:anywhere;display:flex;flex-direction:column;gap:2px}
+.banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--accent-soft);border-radius:var(--r);padding:12px 14px}
+.banner span{flex:1 1 180px;font-size:.92rem}
+
+/* ---- Ajustes ---- */
+.field{display:flex;flex-direction:column;gap:6px}
+.field input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);color:var(--ink);font:inherit;font-size:.95rem}
+.field small{color:var(--muted);font-size:.82rem}
+.conn{display:flex;align-items:center;gap:10px}
+.conn .state{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.conn .state.on{background:var(--ok)}
+.div-card{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
 .div-top{display:flex;gap:8px;align-items:center}
-.div-top input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);color:var(--ink);font:inherit;font-weight:600}
-.div-card textarea{min-height:60px;font-size:.92rem}
+.div-top input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600}
+.div-card textarea{width:100%;min-height:56px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface);color:var(--ink);font:inherit;font-size:.92rem}
 .colors{display:flex;gap:8px;flex-wrap:wrap}
-.swatch{width:28px;height:28px;border-radius:50%;padding:0;border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
+.swatch{width:28px;height:28px;border-radius:50%;padding:0;border:3px solid var(--bg);box-shadow:0 0 0 1px var(--line)}
 .swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink)}
-.pv-div{margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:var(--bg);color:var(--ink);font:inherit;font-size:.85rem;max-width:100%}
-.small-btn{padding:6px 12px;font-size:.85rem}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:999px;display:flex;gap:12px;align-items:center;font-size:.92rem;max-width:calc(100% - 32px)}
-.toast button{background:transparent;color:var(--bg);border:0;padding:0 4px;text-decoration:underline}
+details.adv summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary::after{content:"+";font-size:1.2rem;color:var(--muted)}
+details.adv[open] summary::after{content:"–"}
+details.adv[open] summary{margin-bottom:12px}
+
+/* ---- Barra de abas ---- */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  padding:0 max(16px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px,env(safe-area-inset-left))}
+.tabbar .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;height:var(--tabbar)}
+.tabbar button{border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.78rem;color:var(--muted);padding:6px}
+.tabbar button svg{width:22px;height:22px}
+.tabbar button[aria-selected="true"]{color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabbar) + 16px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:999px;display:flex;gap:12px;align-items:center;font-size:.92rem;max-width:calc(100% - 32px);z-index:30}
+.toast button{color:var(--bg);padding:0 4px;text-decoration:underline;border-radius:4px}
 </style>
 </head>
 <body>
 <div class="wrap">
+
+<!-- ================= MEU DIA ================= -->
+<main class="view" id="viewHoje">
   <header>
-    <div><h1>Meu Dia</h1><span class="today" id="todayLabel"></span></div>
-    <button class="icon-btn" id="openSettings" type="button" aria-label="Configurações">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-    </button>
+    <h1 id="greeting">Meu Dia</h1>
+    <p class="sub" id="todayLabel"></p>
   </header>
 
-  <!-- CONFIGURAÇÃO -->
-  <div class="settings" id="settings" hidden>
-    <h2>Configuração</h2>
-    <p class="meta" style="margin:0">Isso fica salvo só neste celular. Você faz uma vez.</p>
-    <div class="field">
-      <label class="label" for="cfgClient">Google Client ID</label>
-      <input id="cfgClient" autocomplete="off" spellcheck="false" placeholder="123456-abc.apps.googleusercontent.com">
-      <small>Do Google Cloud Console (passo 2 do guia).</small>
-    </div>
-    <div class="field">
-      <label class="label" for="cfgKey">Chave da API do Claude</label>
-      <input id="cfgKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-...">
-      <small>Do console.anthropic.com (passo 3 do guia).</small>
-    </div>
-    <div class="field">
-      <label class="label" for="cfgModel">Modelo do Claude</label>
-      <input id="cfgModel" autocomplete="off" spellcheck="false">
-      <small>Deixe como está, a menos que o app avise que o modelo não existe.</small>
-    </div>
-    <div class="row">
-      <button class="primary" id="cfgSave" type="button">Salvar</button>
-      <button class="ghost" id="cfgClose" type="button">Voltar</button>
-    </div>
-    <div class="status" id="cfgStatus" role="status"></div>
-    <button class="ghost" id="cfgReset" type="button" style="align-self:flex-start;color:var(--danger)">Apagar configuração deste celular</button>
+  <div class="banner" id="googleBanner" hidden>
+    <span>O acesso ao Google Agenda expirou. Toque para reconectar.</span>
+    <button class="primary" id="connectGoogle" type="button">Reconectar</button>
+  </div>
+  <div class="banner" id="setupBanner" hidden>
+    <span>Falta configurar o app. Leva 1 minuto.</span>
+    <button class="primary" id="goSetup" type="button">Configurar</button>
   </div>
 
-  <!-- DIVISÕES -->
-  <div class="settings" id="divisoes" hidden>
-    <h2>Divisões</h2>
-    <p class="meta" style="margin:0">Cada atividade vai para uma divisão. Dê um nome e as palavras que ajudam a reconhecer o assunto, separadas por vírgula. A cor é a que aparece no Google Agenda.</p>
-    <div id="divList" class="stack" style="gap:10px"></div>
-    <button class="ghost" id="divAdd" type="button" style="align-self:flex-start">+ Nova divisão</button>
+  <section class="capture" aria-label="Falar">
+    <button class="mic" id="micBtn" type="button" aria-label="Falar">
+      <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3.5"/></svg>
+    </button>
+    <div class="mic-label" id="micLabel">Toque e fale</div>
+    <div class="live" id="liveText" data-hint="Ex.: reunião com o Marcos amanhã às 19h e preciso olhar o tema do TCC"></div>
+    <div class="status" id="capStatus" role="status"></div>
+    <div class="or" aria-hidden="true"><span>ou escreva</span></div>
+    <form class="type-form" id="typeForm">
+      <label class="sr" for="typed">Escreva o que precisa organizar</label>
+      <div class="type-row">
+        <textarea id="typed" rows="1" enterkeyhint="send" placeholder="Escreva aqui…"></textarea>
+        <button class="send" type="submit" id="typedSend" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card result" id="result" hidden aria-live="polite">
+    <div class="result-head">
+      <strong id="resultTitle"></strong>
+      <button class="link" id="undoAll" type="button">Desfazer tudo</button>
+    </div>
+    <ul class="items" id="resultList"></ul>
+    <div class="row" id="pendingRow" hidden>
+      <span class="meta" style="flex:1 1 160px">Nada foi salvo ainda: o acesso ao Google expirou.</span>
+      <button class="primary" id="pendingSave" type="button">Conectar e salvar</button>
+    </div>
+  </section>
+
+  <div class="seg" role="tablist" aria-label="Lista">
+    <button type="button" role="tab" id="segTasks" aria-selected="true" aria-controls="panelTasks">Tarefas <span class="count" id="taskCount">0</span></button>
+    <button type="button" role="tab" id="segCal" aria-selected="false" aria-controls="panelCal">Agenda <span class="count" id="calCount">0</span></button>
+  </div>
+
+  <section class="panel" id="panelTasks" role="tabpanel" aria-labelledby="segTasks">
+    <div class="chips" id="divChips" role="group" aria-label="Filtrar por divisão"></div>
+    <div id="tasksBox"><div class="empty">Suas tarefas sem horário aparecem aqui.</div></div>
+  </section>
+  <section class="panel" id="panelCal" role="tabpanel" aria-labelledby="segCal" hidden>
+    <div id="calBox"><div class="empty">Seus compromissos dos próximos 7 dias aparecem aqui.</div></div>
+  </section>
+</main>
+
+<!-- ================= AJUSTES ================= -->
+<main class="view" id="viewAjustes" hidden>
+  <header><h1>Ajustes</h1><p class="sub">Tudo fica salvo só neste celular.</p></header>
+
+  <section class="card">
+    <h2>Google Agenda</h2>
+    <div class="conn"><span class="state" id="connState"></span><span id="connText">Não conectado</span></div>
+    <p class="meta" style="margin:0">Por segurança, o Google pede para reconectar a cada hora de uso. É um toque, sem senha.</p>
     <div class="row">
+      <button class="primary" id="setConnect" type="button">Conectar</button>
+      <button class="ghost" id="setRefresh" type="button">Atualizar listas</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Divisões</h2>
+    <p class="meta" style="margin:0">Cada atividade vai para uma divisão. Escreva as palavras que costumam indicar o assunto, separadas por vírgula. A cor também aparece no Google Agenda.</p>
+    <div id="divList" class="stack" style="gap:10px"></div>
+    <div class="row">
+      <button class="ghost" id="divAdd" type="button">+ Nova divisão</button>
       <button class="primary" id="divSave" type="button">Salvar divisões</button>
-      <button class="ghost" id="divClose" type="button">Voltar</button>
     </div>
     <div class="status" id="divStatus" role="status"></div>
-  </div>
+  </section>
 
-  <!-- APP -->
-  <div id="main" class="stack" style="gap:26px">
-    <div class="banner" id="googleBanner" hidden>
-      <span>Conecte seu Google Agenda para ver e salvar compromissos.</span>
-      <button class="primary" id="connectGoogle" type="button">Conectar Google Agenda</button>
-    </div>
-
-    <div class="capture">
-      <div class="mic-row">
-        <button class="mic" id="micBtn" type="button" aria-label="Falar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3.5"/></svg>
-        </button>
-        <div class="mic-text"><strong id="micTitle">Toque e fale</strong><span id="micSub">Compromissos e tarefas, tudo junto. Eu separo.</span></div>
+  <section class="card">
+    <details class="adv" id="keysBox">
+      <summary>Chaves de acesso</summary>
+      <div class="stack" style="gap:14px">
+        <div class="field">
+          <label class="label" for="cfgClient">Google Client ID</label>
+          <input id="cfgClient" autocomplete="off" spellcheck="false" placeholder="123456-abc.apps.googleusercontent.com">
+          <small>Do Google Cloud → Clientes → Meu Dia.</small>
+        </div>
+        <div class="field">
+          <label class="label" for="cfgKey">Chave da API do Claude</label>
+          <input id="cfgKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-...">
+          <small>Do console.anthropic.com → API Keys.</small>
+        </div>
+        <div class="field">
+          <label class="label" for="cfgModel">Modelo do Claude</label>
+          <input id="cfgModel" autocomplete="off" spellcheck="false">
+          <small>Só mude se o app avisar que o modelo não existe.</small>
+        </div>
+        <div class="row"><button class="primary" id="cfgSave" type="button">Salvar chaves</button></div>
+        <div class="status" id="cfgStatus" role="status"></div>
       </div>
-      <textarea id="dictation" placeholder="Ex.: reunião com o Marcos hoje às 19h15. Preciso mandar o projeto pra Ana hoje."></textarea>
-      <div class="cap-foot"><button class="primary" id="organize" type="button">Organizar</button></div>
-      <div class="status" id="capStatus" role="status"></div>
-    </div>
+    </details>
+  </section>
 
-    <div class="preview" id="preview" hidden>
-      <span class="label">Confira e salve</span>
-      <div class="pv-list" id="pvList"></div>
-      <div class="pv-actions">
-        <button class="ghost" type="button" id="pvCancel">Descartar</button>
-        <button class="primary" type="button" id="pvSave">Salvar tudo</button>
-      </div>
-    </div>
-
-    <section>
-      <div class="sec-head"><h2>Tarefas <span class="pill" id="taskCount">–</span></h2><button class="ghost small-btn" id="openDivs" type="button">Divisões</button></div>
-      <div class="chips" id="divChips" role="group" aria-label="Filtrar por divisão"></div>
-      <div id="tasksBox"><div class="empty">Suas tarefas sem horário aparecem aqui.</div></div>
-    </section>
-
-    <section>
-      <div class="sec-head"><h2>Agenda · 7 dias</h2><button class="ghost" id="refresh" type="button" style="padding:6px 12px;font-size:.85rem">Atualizar</button></div>
-      <div id="calBox"><div class="empty">Conecte o Google Agenda para ver seus compromissos.</div></div>
-    </section>
-  </div>
+  <section class="card">
+    <details class="adv">
+      <summary>Apagar dados deste celular</summary>
+      <p class="meta" style="margin:0 0 10px">Remove as chaves, a conexão e as divisões deste aparelho. Seus compromissos e tarefas continuam no Google Agenda.</p>
+      <button class="ghost danger" id="cfgReset" type="button">Apagar tudo deste celular</button>
+    </details>
+  </section>
+  <p class="meta" style="text-align:center;margin:0">Meu Dia · versão 4</p>
+</main>
 </div>
+
+<nav class="tabbar" aria-label="Navegação">
+  <div class="in" role="tablist">
+    <button type="button" role="tab" id="tabHoje" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4"/></svg>
+      Meu dia
+    </button>
+    <button type="button" role="tab" id="tabAjustes" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      Ajustes
+    </button>
+  </div>
+</nav>
 <div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastUndo" type="button">Desfazer</button></div>
 
 <script>
-/* ===== Constantes ===== */
+/* ================= Constantes ================= */
 const TZ='America/Sao_Paulo';
 const DEFAULT_MODEL='claude-haiku-5-5';
 const SCOPE='https://www.googleapis.com/auth/calendar';
@@ -219,8 +309,13 @@ const store={
   set(k,v){try{localStorage.setItem(k,v)}catch(e){}},
   del(k){try{localStorage.removeItem(k)}catch(e){}}
 };
+const ICON_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4"/></svg>';
+const ICON_TASK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>';
+const ICON_MIC='<rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3.5"/>';
+const ICON_STOP='<rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/>';
+const ICON_SPIN='<path d="M12 3a9 9 0 1 0 9 9"/>';
 
-/* ===== Datas (fuso de São Paulo) ===== */
+/* ================= Datas (fuso de São Paulo) ================= */
 function nowSP(d=new Date()){
   const f=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
   const p=Object.fromEntries(f.formatToParts(d).map(x=>[x.type,x.value]));
@@ -237,9 +332,14 @@ function dayLabel(ymd){
   const[,m,d]=ymd.split('-').map(Number);return `${wd(ymd)}, ${d} ${MO[m-1]}`;
 }
 function plusHour(iso){const d=new Date(iso.slice(0,19)+'Z');d.setUTCHours(d.getUTCHours()+1);return d.toISOString().slice(0,19);}
-$('todayLabel').textContent=(()=>{const t=today();const[,m,d]=t.split('-').map(Number);return `${wd(t)}, ${d} de ${MO[m-1]}`;})();
+function paintHeader(){
+  const n=nowSP(),h=+n.hm.slice(0,2);
+  $('greeting').textContent=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  const[,m,d]=n.ymd.split('-').map(Number);$('todayLabel').textContent=`${wd(n.ymd)}, ${d} de ${MO[m-1]}`;
+}
+paintHeader();
 
-/* ===== Mensagens ===== */
+/* ================= Mensagens ================= */
 function setStatus(id,t,err){const s=$(id);s.textContent=t||'';s.className='status'+(err?' err':'');}
 let toastTimer=null;
 function toast(msg,undo){
@@ -248,88 +348,59 @@ function toast(msg,undo){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>{$('toast').hidden=true;},5000);
 }
 
-/* ===== Configuração ===== */
-function cfg(){return {client:store.get('md_client')||'',key:store.get('md_key')||'',model:store.get('md_model')||DEFAULT_MODEL};}
-function showScreen(name){
-  for(const s of ['main','settings','divisoes'])$(s).hidden=s!==name;
+/* ================= Navegação ================= */
+function showTab(name){
+  const hoje=name==='hoje';
+  $('viewHoje').hidden=!hoje;$('viewAjustes').hidden=hoje;
+  $('tabHoje').setAttribute('aria-selected',String(hoje));$('tabAjustes').setAttribute('aria-selected',String(!hoje));
+  if(!hoje){fillSettings();renderDivEditor();}
   window.scrollTo(0,0);
 }
-function showSettings(on){
-  showScreen(on?'settings':'main');
-  if(on){const c=cfg();$('cfgClient').value=c.client;$('cfgKey').value=c.key;$('cfgModel').value=c.model;}
+$('tabHoje').onclick=()=>showTab('hoje');
+$('tabAjustes').onclick=()=>showTab('ajustes');
+$('goSetup').onclick=()=>{showTab('ajustes');$('keysBox').open=true;};
+function showList(which){
+  const t=which==='tasks';
+  $('segTasks').setAttribute('aria-selected',String(t));$('segCal').setAttribute('aria-selected',String(!t));
+  $('panelTasks').hidden=!t;$('panelCal').hidden=t;store.set('md_list',which);
 }
-$('openSettings').onclick=()=>showSettings($('settings').hidden);
+$('segTasks').onclick=()=>showList('tasks');
+$('segCal').onclick=()=>showList('cal');
+showList(store.get('md_list')==='cal'?'cal':'tasks');
 
-/* ===== Divisões ===== */
-const GCOLORS={'1':'#7986CB','2':'#33B679','3':'#8E24AA','4':'#E67C73','5':'#F6BF26','6':'#F4511E','7':'#039BE5','8':'#616161','9':'#3F51B5','10':'#0B8043','11':'#D50000'};
-const GNAMES={'1':'Lavanda','2':'Sálvia','3':'Uva','4':'Flamingo','5':'Banana','6':'Tangerina','7':'Pavão','8':'Grafite','9':'Mirtilo','10':'Manjericão','11':'Tomate'};
-const DEFAULT_CATS=[
-  {nome:'Faculdade',palavras:'tcc, faculdade, prova, aula, professor, orientador, artigo, trabalho acadêmico, seminário',cor:'9'},
-  {nome:'Igreja',palavras:'igreja, grupo de jovens, culto, célula, louvor, ensaio, retiro, pastor, ministério',cor:'3'},
-];
-const NONE='Sem divisão';
-function cats(){
-  try{const v=JSON.parse(store.get('md_cats')||'null');if(Array.isArray(v))return v;}catch(e){}
-  return DEFAULT_CATS.map(c=>({...c}));
+/* ================= Configuração ================= */
+function cfg(){return {client:store.get('md_client')||'',key:store.get('md_key')||'',model:store.get('md_model')||DEFAULT_MODEL};}
+const configured=()=>!!(cfg().client&&cfg().key);
+function fillSettings(){
+  const c=cfg();$('cfgClient').value=c.client;$('cfgKey').value=c.key;$('cfgModel').value=c.model;
+  if(!configured())$('keysBox').open=true;
+  paintConn();
 }
-function catByName(n){if(!n)return null;const k=String(n).trim().toLowerCase();return cats().find(c=>c.nome.toLowerCase()===k)||null;}
-function divOf(e){const p=e&&e.extendedProperties&&e.extendedProperties.private;return (p&&p.divisao)||'';}
-function colorOf(nome){const c=catByName(nome);return c&&GCOLORS[c.cor]?GCOLORS[c.cor]:null;}
-function dotFor(nome){const d=el('span','dot');const c=colorOf(nome);if(c)d.style.background=c;return d;}
-
-let divDraft=[];
-function openDivs(){divDraft=cats().map(c=>({...c}));renderDivEditor();setStatus('divStatus','');showScreen('divisoes');}
-$('openDivs').onclick=openDivs;
-$('divClose').onclick=()=>showScreen('main');
-$('divAdd').onclick=()=>{
-  const used=new Set(divDraft.map(d=>d.cor));
-  const cor=Object.keys(GCOLORS).find(k=>!used.has(k))||'1';
-  divDraft.push({nome:'',palavras:'',cor});renderDivEditor();
-  const ins=$('divList').querySelectorAll('.div-top input');ins[ins.length-1].focus();
-};
-function renderDivEditor(){
-  const box=$('divList');box.replaceChildren();
-  if(!divDraft.length)box.append(el('div','empty','Nenhuma divisão. Toque em "+ Nova divisão".'));
-  divDraft.forEach((d,i)=>{
-    const card=el('div','div-card');
-    const top=el('div','div-top');
-    const name=document.createElement('input');name.id='div-n-'+i;name.value=d.nome;name.placeholder='Nome (ex.: Trabalho)';name.setAttribute('aria-label','Nome da divisão');
-    name.oninput=()=>{d.nome=name.value;};
-    const del=el('button','x','×');del.type='button';del.setAttribute('aria-label','Apagar divisão '+(d.nome||''));
-    del.onclick=()=>{divDraft.splice(i,1);renderDivEditor();};
-    top.append(dotFor(null),name,del);top.firstChild.style.background=GCOLORS[d.cor];
-    const kw=document.createElement('textarea');kw.id='div-k-'+i;kw.value=d.palavras;kw.placeholder='Palavras-chave: tcc, prova, orientador…';kw.setAttribute('aria-label','Palavras-chave de '+(d.nome||'divisão'));
-    kw.oninput=()=>{d.palavras=kw.value;};
-    const colors=el('div','colors');
-    for(const [k,hex] of Object.entries(GCOLORS)){
-      const s=el('button','swatch');s.type='button';s.style.background=hex;s.setAttribute('aria-label','Cor '+GNAMES[k]);s.setAttribute('aria-pressed',String(d.cor===k));
-      s.onclick=()=>{d.cor=k;renderDivEditor();};colors.append(s);
-    }
-    card.append(top,kw,colors);box.append(card);
-  });
+function paintConn(){
+  const on=!!validToken();
+  $('connState').classList.toggle('on',on);
+  $('connText').textContent=on?'Conectado':(cfg().client?'Desconectado':'Preencha as chaves primeiro');
+  $('setConnect').textContent=on?'Reconectar':'Conectar';
+  $('setConnect').disabled=!cfg().client;
 }
-$('divSave').onclick=()=>{
-  const clean=divDraft.map(d=>({nome:d.nome.trim().replace(/\s+/g,' '),palavras:d.palavras.split(/[,;\n]/).map(s=>s.trim()).filter(Boolean).join(', '),cor:d.cor})).filter(d=>d.nome);
-  const names=clean.map(d=>d.nome.toLowerCase());
-  if(new Set(names).size!==names.length){setStatus('divStatus','Duas divisões estão com o mesmo nome. Mude uma delas.',true);return;}
-  if(names.includes(NONE.toLowerCase())){setStatus('divStatus','"'+NONE+'" é reservado. Escolha outro nome.',true);return;}
-  store.set('md_cats',JSON.stringify(clean));
-  if(catFilter!=='todas'&&!catByName(catFilter)&&catFilter!==NONE){catFilter='todas';store.set('md_catf',catFilter);}
-  showScreen('main');renderTasks();toast('Divisões salvas.');
-};
-$('cfgClose').onclick=()=>{if(cfg().client&&cfg().key)showSettings(false);else setStatus('cfgStatus','Preencha os dois campos para usar o app.',true);};
 $('cfgSave').onclick=()=>{
   const client=$('cfgClient').value.trim(),key=$('cfgKey').value.trim(),model=$('cfgModel').value.trim()||DEFAULT_MODEL;
   if(!client.endsWith('.apps.googleusercontent.com')){setStatus('cfgStatus','O Client ID termina com ".apps.googleusercontent.com". Confira se copiou inteiro.',true);return;}
   if(!key.startsWith('sk-ant-')){setStatus('cfgStatus','A chave do Claude começa com "sk-ant-". Confira se copiou inteira.',true);return;}
   const changedClient=client!==cfg().client;
   store.set('md_client',client);store.set('md_key',key);store.set('md_model',model);
-  if(changedClient){store.del('md_tok');store.del('md_exp');store.del('md_consented');store.del('md_tcal');tokenClient=null;}
-  setStatus('cfgStatus','');showSettings(false);boot();
+  if(changedClient){['md_tok','md_exp','md_consented','md_tcal'].forEach(store.del);tokenClient=null;}
+  setStatus('cfgStatus','Chaves salvas.');paintConn();paintBanners();
 };
-$('cfgReset').onclick=()=>{['md_client','md_key','md_model','md_tok','md_exp','md_consented','md_tcal','md_cats','md_catf'].forEach(store.del);location.reload();};
+$('cfgReset').onclick=()=>{['md_client','md_key','md_model','md_tok','md_exp','md_consented','md_tcal','md_cats','md_catf','md_list'].forEach(store.del);location.reload();};
+$('setConnect').onclick=async()=>{try{await loginGoogle();paintConn();paintBanners();loadAll();toast('Google Agenda conectado.');}catch(e){toast(loginErr(e));}};
+$('setRefresh').onclick=async()=>{if(!validToken()){try{await loginGoogle();}catch(e){toast(loginErr(e));return;}}await loadAll();paintConn();toast('Listas atualizadas.');};
+function paintBanners(){
+  $('setupBanner').hidden=configured();
+  $('googleBanner').hidden=!configured()||!!validToken();
+}
 
-/* ===== Google: login ===== */
+/* ================= Google: login ================= */
 let tokenClient=null;
 function gisReady(){return new Promise((res,rej)=>{let n=0;const t=setInterval(()=>{if(window.google&&google.accounts&&google.accounts.oauth2){clearInterval(t);res();}else if(++n>100){clearInterval(t);rej({code:'gis'});}},100);});}
 async function ensureClient(){
@@ -338,34 +409,31 @@ async function ensureClient(){
   tokenClient=google.accounts.oauth2.initTokenClient({client_id:cfg().client,scope:SCOPE,callback:()=>{}});
 }
 function validToken(){const t=store.get('md_tok'),e=+(store.get('md_exp')||0);return t&&Date.now()<e?t:null;}
-/* Pede um token novo. Só chame a partir de um toque do usuário (abre uma janelinha do Google). */
+/* Pede um token novo. Chame só a partir de um toque (abre uma janelinha do Google). */
 async function loginGoogle(){
   await ensureClient();
   return new Promise((res,rej)=>{
     tokenClient.callback=r=>{
       if(r.error){rej({code:'auth',msg:r.error});return;}
       store.set('md_tok',r.access_token);store.set('md_exp',String(Date.now()+(Number(r.expires_in)-60)*1000));store.set('md_consented','1');
-      res(r.access_token);
+      paintBanners();res(r.access_token);
     };
     tokenClient.error_callback=e=>rej({code:'auth',msg:e&&e.type});
     tokenClient.requestAccessToken({prompt:store.get('md_consented')?'':'consent'});
   });
 }
+function loginErr(e){return e&&e.code==='gis'?'Não consegui carregar o login do Google. Verifique a internet.':'Login do Google não concluído. Tente de novo.';}
 async function gapi(path,opts={}){
   const t=validToken();if(!t)throw {code:'auth'};
   const r=await fetch(API+path,{...opts,headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'}});
-  if(r.status===401){store.del('md_tok');throw {code:'auth'};}
+  if(r.status===401){store.del('md_tok');paintBanners();throw {code:'auth'};}
   if(!r.ok){let msg='';try{msg=(await r.json()).error.message}catch(e){}throw {code:'http',status:r.status,msg};}
   return r.status===204?null:r.json();
 }
-function needGoogle(){ $('googleBanner').hidden=false; }
-$('connectGoogle').onclick=async()=>{
-  try{await loginGoogle();$('googleBanner').hidden=true;loadAll();}
-  catch(e){toast(e.code==='gis'?'Não consegui carregar o login do Google. Verifique a internet.':'Login do Google não concluído. Tente de novo.');}
-};
+$('connectGoogle').onclick=async()=>{try{await loginGoogle();loadAll();}catch(e){toast(loginErr(e));}};
 
-/* ===== Agenda de tarefas ===== */
-async function tasksCalId(retry=true){
+/* ================= Agenda de tarefas ================= */
+async function tasksCalId(){
   let id=store.get('md_tcal');if(id)return id;
   const l=await gapi('/users/me/calendarList?maxResults=250');
   const f=(l.items||[]).find(c=>c.summary===TASKS_CAL);
@@ -377,68 +445,118 @@ async function withTasksCal(fn){
   try{return await fn(await tasksCalId());}
   catch(e){if(e.code==='http'&&e.status===404){store.del('md_tcal');return fn(await tasksCalId());}throw e;}
 }
+const calPath=id=>'/calendars/'+encodeURIComponent(id)+'/events';
 
-/* ===== Carregar e mostrar ===== */
+/* ================= Divisões ================= */
+const GCOLORS={'1':'#7986CB','2':'#33B679','3':'#8E24AA','4':'#E67C73','5':'#F6BF26','6':'#F4511E','7':'#039BE5','8':'#616161','9':'#3F51B5','10':'#0B8043','11':'#D50000'};
+const GNAMES={'1':'Lavanda','2':'Sálvia','3':'Uva','4':'Flamingo','5':'Banana','6':'Tangerina','7':'Pavão','8':'Grafite','9':'Mirtilo','10':'Manjericão','11':'Tomate'};
+const DEFAULT_CATS=[
+  {nome:'Faculdade',palavras:'tcc, faculdade, prova, aula, professor, orientador, artigo, trabalho acadêmico, seminário',cor:'9'},
+  {nome:'Igreja',palavras:'igreja, grupo de jovens, culto, célula, louvor, ensaio, retiro, pastor, ministério',cor:'3'},
+];
+const NONE='Sem divisão';
+function cats(){try{const v=JSON.parse(store.get('md_cats')||'null');if(Array.isArray(v))return v;}catch(e){}return DEFAULT_CATS.map(c=>({...c}));}
+function catByName(n){if(!n)return null;const k=String(n).trim().toLowerCase();return cats().find(c=>c.nome.toLowerCase()===k)||null;}
+function divOf(e){const p=e&&e.extendedProperties&&e.extendedProperties.private;return (p&&p.divisao)||'';}
+function colorOf(nome){const c=catByName(nome);return c&&GCOLORS[c.cor]?GCOLORS[c.cor]:null;}
+function dotFor(nome){const d=el('span','dot');const c=colorOf(nome);if(c)d.style.background=c;return d;}
+function normDiv(v){const c=catByName(v);return c?c.nome:null;}
+
+let divDraft=null;
+function renderDivEditor(){
+  if(!divDraft)divDraft=cats().map(c=>({...c}));
+  const box=$('divList');box.replaceChildren();
+  if(!divDraft.length)box.append(el('div','empty','Nenhuma divisão. Toque em "+ Nova divisão".'));
+  divDraft.forEach((d,i)=>{
+    const card=el('div','div-card');
+    const top=el('div','div-top');
+    const dot=el('span','dot');dot.style.background=GCOLORS[d.cor];
+    const name=document.createElement('input');name.id='div-n-'+i;name.value=d.nome;name.placeholder='Nome (ex.: Trabalho)';name.setAttribute('aria-label','Nome da divisão');
+    name.oninput=()=>{d.nome=name.value;};
+    const del=el('button','x','Apagar');del.type='button';del.setAttribute('aria-label','Apagar divisão '+(d.nome||''));
+    del.onclick=()=>{divDraft.splice(i,1);renderDivEditor();};
+    top.append(dot,name,del);
+    const kw=document.createElement('textarea');kw.id='div-k-'+i;kw.value=d.palavras;kw.placeholder='Palavras-chave: cliente, relatório, reunião de equipe…';kw.setAttribute('aria-label','Palavras-chave');
+    kw.oninput=()=>{d.palavras=kw.value;};
+    const colors=el('div','colors');
+    for(const [k,hex] of Object.entries(GCOLORS)){
+      const s=el('button','swatch');s.type='button';s.style.background=hex;s.setAttribute('aria-label','Cor '+GNAMES[k]);s.setAttribute('aria-pressed',String(d.cor===k));
+      s.onclick=()=>{d.cor=k;renderDivEditor();};colors.append(s);
+    }
+    card.append(top,kw,colors);box.append(card);
+  });
+}
+$('divAdd').onclick=()=>{
+  if(!divDraft)divDraft=cats().map(c=>({...c}));
+  const used=new Set(divDraft.map(d=>d.cor));
+  divDraft.push({nome:'',palavras:'',cor:Object.keys(GCOLORS).find(k=>!used.has(k))||'1'});renderDivEditor();
+  const ins=$('divList').querySelectorAll('.div-top input');if(ins.length)ins[ins.length-1].focus();
+};
+$('divSave').onclick=()=>{
+  const clean=(divDraft||[]).map(d=>({nome:d.nome.trim().replace(/\s+/g,' '),palavras:d.palavras.split(/[,;\n]/).map(s=>s.trim()).filter(Boolean).join(', '),cor:d.cor})).filter(d=>d.nome);
+  const names=clean.map(d=>d.nome.toLowerCase());
+  if(new Set(names).size!==names.length){setStatus('divStatus','Duas divisões estão com o mesmo nome. Mude uma delas.',true);return;}
+  if(names.includes(NONE.toLowerCase())){setStatus('divStatus','"'+NONE+'" é reservado. Escolha outro nome.',true);return;}
+  store.set('md_cats',JSON.stringify(clean));divDraft=null;renderDivEditor();
+  if(catFilter!=='todas'&&!catByName(catFilter)&&catFilter!==NONE){catFilter='todas';store.set('md_catf',catFilter);}
+  setStatus('divStatus','Divisões salvas.');renderTasks();
+};
+
+/* ================= Carregar listas ================= */
 const q=o=>Object.entries(o).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
 function range(fromYmd,toYmd){return {timeMin:fromYmd+'T00:00:00-03:00',timeMax:toYmd+'T00:00:00-03:00',singleEvents:'true',orderBy:'startTime',maxResults:'250'};}
-
 async function loadAll(){
-  if(!validToken()){needGoogle();return;}
-  $('googleBanner').hidden=true;
+  paintBanners();
+  if(!validToken())return;
   await Promise.all([loadCal(),loadTasks()]);
 }
+let calItems=[];
 async function loadCal(){
   const t=today();
-  try{
-    const r=await gapi('/calendars/primary/events?'+q(range(t,addDays(t,8))));
-    renderCal(r.items||[]);
-  }catch(e){if(e.code==='auth')needGoogle();else $('calBox').replaceChildren(el('div','empty','Não consegui carregar a agenda agora. Toque em Atualizar.'));}
+  try{const r=await gapi('/calendars/primary/events?'+q(range(t,addDays(t,8))));calItems=(r.items||[]).filter(e=>e.status!=='cancelled');renderCal();}
+  catch(e){if(e.code!=='auth')$('calBox').replaceChildren(el('div','empty','Não consegui carregar a agenda agora.'));}
 }
 let tasks=[];
 async function loadTasks(){
   const t=today();
-  try{
-    const r=await withTasksCal(id=>gapi('/calendars/'+encodeURIComponent(id)+'/events?'+q(range(addDays(t,-60),addDays(t,120)))));
-    tasks=(r.items||[]).filter(e=>e.status!=='cancelled');renderTasks();
-  }catch(e){if(e.code==='auth')needGoogle();else $('tasksBox').replaceChildren(el('div','empty','Não consegui carregar as tarefas agora. Toque em Atualizar.'));}
+  try{const r=await withTasksCal(id=>gapi(calPath(id)+'?'+q(range(addDays(t,-60),addDays(t,120)))));tasks=(r.items||[]).filter(e=>e.status!=='cancelled');renderTasks();}
+  catch(e){if(e.code!=='auth')$('tasksBox').replaceChildren(el('div','empty','Não consegui carregar as tarefas agora.'));}
 }
-$('refresh').onclick=async()=>{if(!validToken()){try{await loginGoogle();}catch(e){return;}}loadAll();};
 
-function renderCal(items){
+function renderCal(){
   const box=$('calBox');box.replaceChildren();
   const byDay=new Map();
-  for(const e of items){
-    if(e.status==='cancelled')continue;
+  for(const e of calItems){
     let ymd,hm;
     if(e.start&&e.start.dateTime){const p=nowSP(new Date(e.start.dateTime));ymd=p.ymd;hm=p.hm;}
     else if(e.start&&e.start.date){ymd=e.start.date;hm='dia todo';}
     else continue;
     if(!byDay.has(ymd))byDay.set(ymd,[]);byDay.get(ymd).push({hm,e});
   }
+  $('calCount').textContent=String((byDay.get(today())||[]).length);
   if(!byDay.size){box.append(el('div','empty','Nenhum compromisso nos próximos 7 dias.'));return;}
   const wrap=el('div','stack');
   for(const [ymd,list] of [...byDay.entries()].sort((a,b)=>a[0].localeCompare(b[0]))){
-    const d=el('div','group');d.append(el('div','day-name'+(ymd===today()?' is-today':''),dayLabel(ymd)));
+    const d=el('div','folder');d.append(el('div','day-name'+(ymd===today()?' is-today':''),dayLabel(ymd)));
     for(const {hm,e} of list){
       const a=el(e.htmlLink?'a':'div','ev');if(e.htmlLink){a.href=e.htmlLink;a.target='_blank';a.rel='noopener';}
-      const s=el('span','s',e.summary||'(sem título)');if(e.location)s.append(el('span','meta',' · '+e.location));
+      const s=el('span','s');s.append(el('span',null,e.summary||'(sem título)'));
+      if(e.location)s.append(el('span','meta',e.location));
       const dv=catByName(divOf(e));
-      if(dv){const tg=el('span','tag');tg.style.display='flex';tg.append(dotFor(dv.nome),document.createTextNode(dv.nome));s.append(tg);}
+      if(dv){const tg=el('span','tag');tg.append(dotFor(dv.nome),document.createTextNode(dv.nome));s.append(tg);}
       a.append(el('span','t',hm),s);d.append(a);
     }
     wrap.append(d);
   }
   box.append(wrap);
 }
+
 let catFilter=store.get('md_catf')||'todas';
 const taskDate=e=>(e.start&&e.start.date)||(e.start&&e.start.dateTime?nowSP(new Date(e.start.dateTime)).ymd:today());
 const taskSemData=e=>!!(e.extendedProperties&&e.extendedProperties.private&&e.extendedProperties.private.semData==='1');
-/* Divisão de uma tarefa como aparece agora: a salva, se ainda existir; senão "Sem divisão". */
 function taskDiv(e){const c=catByName(divOf(e));return c?c.nome:NONE;}
-/* Ordem dentro de uma pasta: atrasadas, hoje, sem data, futuras. */
 function taskRank(e){const d=taskDate(e),t=today();if(taskSemData(e))return [2,d];if(d<t)return [0,d];if(d===t)return [1,d];return [3,d];}
 function byRank(a,b){const x=taskRank(a),y=taskRank(b);return x[0]-y[0]||x[1].localeCompare(y[1]);}
-
 function renderChips(){
   const box=$('divChips');box.replaceChildren();
   const counts=new Map();for(const e of tasks){const k=taskDiv(e);counts.set(k,(counts.get(k)||0)+1);}
@@ -447,24 +565,19 @@ function renderChips(){
   for(const [key,label,n,colorName] of opts){
     const b=el('button','chip');b.type='button';b.setAttribute('aria-pressed',String(catFilter===key));
     if(colorName)b.append(dotFor(colorName));
-    b.append(document.createTextNode(label));b.append(el('span','n',String(n)));
+    b.append(document.createTextNode(label),el('span','n',String(n)));
     b.onclick=()=>{catFilter=key;store.set('md_catf',key);renderTasks();};
     box.append(b);
   }
 }
-function taskItem(e,showDiv){
+function taskItem(e){
   const t=today(),d=taskDate(e),sd=taskSemData(e),late=!sd&&d<t;
   const li=el('li','task');
   const cb=document.createElement('input');cb.type='checkbox';cb.id='t-'+e.id;cb.setAttribute('aria-label','Concluir '+(e.summary||''));
   cb.onchange=()=>completeTask(e,li);
   const b=el('label','body');b.htmlFor=cb.id;b.append(el('div',null,e.summary||'(sem título)'));
-  let when='';
-  if(late)when='Atrasada · '+dayLabel(d);
-  else if(sd)when=d<t?'Sem data · desde '+dayLabel(d).toLowerCase():'Sem data';
-  else when=dayLabel(d);
-  const meta=el('div','meta'+(late?' late':''),when);
-  if(showDiv){const tg=el('span','tag');tg.style.marginLeft='8px';tg.append(dotFor(taskDiv(e)),document.createTextNode(taskDiv(e)));meta.append(tg);}
-  b.append(meta);
+  let when=late?'Atrasada · '+dayLabel(d):sd?(d<t?'Sem data · desde '+dayLabel(d).toLowerCase():'Sem data'):dayLabel(d);
+  b.append(el('div','meta'+(late?' late':''),when));
   if(e.description)b.append(el('div','meta',e.description));
   li.append(cb,b);return li;
 }
@@ -472,96 +585,87 @@ function renderTasks(){
   const box=$('tasksBox');box.replaceChildren();
   $('taskCount').textContent=String(tasks.length);
   renderChips();
-  if(!tasks.length){box.append(el('div','empty','Nada pendente. Fale algo como "preciso olhar o tema do meu TCC".'));return;}
+  if(!tasks.length){box.append(el('div','empty','Nada pendente por aqui.'));return;}
   const wrap=el('div','stack');
   if(catFilter==='todas'){
-    // Uma pasta por divisão, na ordem em que você as criou; "Sem divisão" por último.
-    const order=[...cats().map(c=>c.nome),NONE];
-    for(const name of order){
+    for(const name of [...cats().map(c=>c.nome),NONE]){
       const list=tasks.filter(e=>taskDiv(e)===name).sort(byRank);
       if(!list.length)continue;
       const f=el('div','folder');
       const h=el('div','folder-head');if(name!==NONE)h.append(dotFor(name));h.append(document.createTextNode(name),el('span','n',String(list.length)));
-      const ul=el('ul','list');list.forEach(e=>ul.append(taskItem(e,false)));
+      const ul=el('ul','list');list.forEach(e=>ul.append(taskItem(e)));
       f.append(h,ul);wrap.append(f);
     }
   }else{
     const list=tasks.filter(e=>taskDiv(e)===catFilter).sort(byRank);
     if(!list.length)wrap.append(el('div','empty','Nada pendente em '+catFilter+'.'));
-    else{const ul=el('ul','list');list.forEach(e=>ul.append(taskItem(e,false)));wrap.append(ul);}
+    else{const ul=el('ul','list');list.forEach(e=>ul.append(taskItem(e)));wrap.append(ul);}
   }
   box.append(wrap);
 }
 async function completeTask(e,li){
   li.style.opacity='.4';
   try{
-    await withTasksCal(id=>gapi('/calendars/'+encodeURIComponent(id)+'/events/'+encodeURIComponent(e.id),{method:'DELETE'}));
+    await withTasksCal(id=>gapi(calPath(id)+'/'+encodeURIComponent(e.id),{method:'DELETE'}));
     tasks=tasks.filter(x=>x.id!==e.id);renderTasks();
     toast('Tarefa concluída',async()=>{
       const body={summary:e.summary,description:e.description||'',start:e.start,end:e.end,transparency:'transparent',extendedProperties:e.extendedProperties,reminders:{useDefault:false,overrides:[]}};
       if(e.colorId)body.colorId=e.colorId;
-      try{await withTasksCal(id=>gapi('/calendars/'+encodeURIComponent(id)+'/events',{method:'POST',body:JSON.stringify(body)}));loadTasks();}catch(err){toast('Não consegui desfazer.');}
+      try{await withTasksCal(id=>gapi(calPath(id),{method:'POST',body:JSON.stringify(body)}));loadTasks();}catch(err){toast('Não consegui desfazer.');}
     });
-  }catch(err){li.style.opacity='';li.querySelector('input').checked=false;if(err.code==='auth')needGoogle();else toast('Não consegui concluir. Tente de novo.');}
+  }catch(err){li.style.opacity='';li.querySelector('input').checked=false;toast(err.code==='auth'?'Reconecte o Google Agenda.':'Não consegui concluir. Tente de novo.');}
 }
 
-/* ===== Microfone ===== */
+/* ================= Microfone ================= */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let rec=null,listening=false,heard=false;
-function updMic(){
-  $('micBtn').classList.toggle('on',listening);
-  $('micBtn').setAttribute('aria-label',listening?'Parar':'Falar');
-  $('micTitle').textContent=listening?'Ouvindo… pode falar':'Toque e fale';
-  $('micSub').textContent=listening?'Quando você parar de falar, eu organizo.':'Compromissos e tarefas, tudo junto. Eu separo.';
+let rec=null,listening=false,busy=false,heard='';
+function micState(state){
+  const b=$('micBtn'),icon=$('micIcon');
+  b.classList.toggle('on',state==='on');b.classList.toggle('busy',state==='busy');
+  icon.innerHTML=state==='on'?ICON_STOP:state==='busy'?ICON_SPIN:ICON_MIC;
+  b.setAttribute('aria-label',state==='on'?'Parar':state==='busy'?'Organizando':'Falar');
+  b.disabled=state==='busy';
+  $('micLabel').textContent=state==='on'?'Ouvindo… pode falar':state==='busy'?'Organizando…':'Toque e fale';
+}
+async function onMic(){
+  if(busy)return;
+  if(listening){rec&&rec.stop();return;}
+  if(!configured()){showTab('ajustes');$('keysBox').open=true;return;}
+  if(!SR){setStatus('capStatus','Este navegador não reconhece voz. Abra o app pelo Chrome ou use "Prefiro digitar".',true);return;}
+  // Garante o Google antes de falar, para salvar direto no fim.
+  if(!validToken()){try{await loginGoogle();loadAll();}catch(e){setStatus('capStatus','Conecte o Google Agenda para salvar. '+loginErr(e),true);return;}}
+  startMic();
 }
 function startMic(){
-  if(!SR){setStatus('capStatus','Este navegador não reconhece voz. Abra o app pelo Chrome ou use o microfone do teclado.',true);return;}
-  if(listening){rec&&rec.stop();return;}
-  const base=$('dictation').value.trim();
   rec=new SR();rec.lang='pt-BR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
-  heard=false;
-  rec.onresult=ev=>{
-    let txt='';for(let i=0;i<ev.results.length;i++)txt+=ev.results[i][0].transcript;
-    heard=!!txt.trim();
-    $('dictation').value=(base?base+' ':'')+txt;
-  };
+  heard='';$('liveText').textContent='';setStatus('capStatus','');
+  rec.onresult=ev=>{let txt='';for(let i=0;i<ev.results.length;i++)txt+=ev.results[i][0].transcript;heard=txt.trim();$('liveText').textContent=heard;};
   rec.onerror=ev=>{
     if(ev.error==='not-allowed'||ev.error==='service-not-allowed')setStatus('capStatus','O microfone está bloqueado. No Chrome: ⋮ → Configurações → Configurações de sites → Microfone → permita este site.',true);
     else if(ev.error==='no-speech')setStatus('capStatus','Não ouvi nada. Toque e fale de novo.',true);
     else if(ev.error==='network')setStatus('capStatus','O reconhecimento de voz precisa de internet.',true);
     else if(ev.error!=='aborted')setStatus('capStatus','O microfone parou ('+ev.error+'). Toque de novo.',true);
   };
-  rec.onend=()=>{listening=false;updMic();if(heard&&$('dictation').value.trim())organize();};
-  try{rec.start();listening=true;setStatus('capStatus','');updMic();}catch(e){setStatus('capStatus','Não consegui ligar o microfone. Toque de novo.',true);}
+  rec.onend=()=>{listening=false;micState('idle');if(heard)organize(heard);};
+  try{rec.start();listening=true;micState('on');}catch(e){setStatus('capStatus','Não consegui ligar o microfone. Toque de novo.',true);}
 }
-$('micBtn').onclick=startMic;
+$('micBtn').onclick=onMic;
+// Campo de texto: cresce conforme você escreve; Enter envia (Shift+Enter quebra linha).
+const typed=$('typed');
+function growTyped(){typed.style.height='auto';typed.style.height=Math.min(typed.scrollHeight,140)+'px';}
+typed.addEventListener('input',growTyped);
+typed.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();$('typeForm').requestSubmit();}});
+$('typeForm').addEventListener('submit',async ev=>{
+  ev.preventDefault();
+  const text=typed.value.trim();if(!text||busy)return;
+  typed.blur();
+  if(!configured()){showTab('ajustes');$('keysBox').open=true;return;}
+  if(!validToken()){try{await loginGoogle();loadAll();}catch(e){}}
+  $('liveText').textContent=text;
+  const ok=await organize(text);if(ok){typed.value='';growTyped();}
+});
 
-/* ===== Claude ===== */
-function buildPrompt(text){
-  const n=nowSP();const cal=[];
-  for(let i=0;i<14;i++){const d=addDays(n.ymd,i);cal.push(`${d} = ${wd(d)}${i===0?' (hoje)':i===1?' (amanhã)':''}`);}
-  return `Você organiza a agenda de uma pessoa no Brasil. Agora é ${wd(n.ymd)}, ${n.ymd}, ${n.hm} (fuso America/Sao_Paulo).
-Calendário de referência:
-${cal.join('\n')}
-
-Ela ditou por voz o texto abaixo (pode ter erros de transcrição). Separe em:
-1. "eventos": compromissos COM horário. Vão para o Google Agenda.
-2. "tarefas": coisas a fazer SEM horário. Vão para uma lista.
-
-Regras:
-- Evento sem data dita: hoje se o horário ainda não passou, senão amanhã.
-- "7:15 da noite" = 19:15. "meio-dia" = 12:00. Duração padrão: 1 hora, salvo se ela disser.
-- Dia da semana sem data ("quarta") = a próxima ocorrência no calendário acima (hoje conta, se o horário ainda não passou).
-- Tarefa: "data" = AAAA-MM-DD se ela disse hoje, amanhã, "daqui a pouco" (= hoje) ou um dia; senão null.
-- Títulos curtos e claros em português, começando pelo essencial ("Reunião com João", "Enviar projeto para Ana"). Não invente nada que ela não disse.
-- "local" e "obs" só se ela mencionou; senão string vazia.
-${divisionRules()}
-Responda só com JSON neste formato, sem texto antes ou depois:
-{"eventos":[{"titulo":"","inicio":"AAAA-MM-DDTHH:MM:00","fim":"AAAA-MM-DDTHH:MM:00","local":"","obs":"","divisao":null}],"tarefas":[{"titulo":"","data":null,"obs":"","divisao":null}]}
-
-Texto ditado:
-"""${text}"""`;
-}
+/* ================= Claude ================= */
 function divisionRules(){
   const cs=cats();
   if(!cs.length)return '- "divisao": sempre null.\n';
@@ -575,8 +679,31 @@ Para cada evento e cada tarefa, preencha "divisao" com o nome EXATO de uma divis
 - Se nenhuma combinar com segurança, use null. Não invente divisões novas.
 `;
 }
-/* Garante que a divisão devolvida existe (ignora maiúsculas); senão, fica sem divisão. */
-function normDiv(v){const c=catByName(v);return c?c.nome:null;}
+function buildPrompt(text){
+  const n=nowSP();const cal=[];
+  for(let i=0;i<14;i++){const d=addDays(n.ymd,i);cal.push(`${d} = ${wd(d)}${i===0?' (hoje)':i===1?' (amanhã)':''}`);}
+  return `Você organiza a agenda de uma pessoa no Brasil. Agora é ${wd(n.ymd)}, ${n.ymd}, ${n.hm} (fuso America/Sao_Paulo).
+Calendário de referência:
+${cal.join('\n')}
+
+Ela ditou por voz o texto abaixo (pode ter erros de transcrição). O que você devolver será salvo direto, sem revisão, então seja cuidadoso. Separe em:
+1. "eventos": compromissos COM horário. Vão para o Google Agenda.
+2. "tarefas": coisas a fazer SEM horário. Vão para uma lista.
+
+Regras:
+- Evento sem data dita: hoje se o horário ainda não passou, senão amanhã.
+- "7:15 da noite" = 19:15. "meio-dia" = 12:00. Duração padrão: 1 hora, salvo se ela disser.
+- Dia da semana sem data ("quarta") = a próxima ocorrência no calendário acima (hoje conta, se o horário ainda não passou).
+- Tarefa: "data" = AAAA-MM-DD se ela disse hoje, amanhã, "daqui a pouco" (= hoje) ou um dia; senão null.
+- Títulos curtos e claros em português, começando pelo essencial ("Reunião com João", "Enviar projeto para Ana"). Corrija erros óbvios de transcrição. Não invente nada que ela não disse.
+- "local" e "obs" só se ela mencionou; senão string vazia.
+${divisionRules()}
+Responda só com JSON neste formato, sem texto antes ou depois:
+{"eventos":[{"titulo":"","inicio":"AAAA-MM-DDTHH:MM:00","fim":"AAAA-MM-DDTHH:MM:00","local":"","obs":"","divisao":null}],"tarefas":[{"titulo":"","data":null,"obs":"","divisao":null}]}
+
+Texto ditado:
+"""${text}"""`;
+}
 function parseJSON(s){
   try{return JSON.parse(s)}catch(e){}
   const m=s.match(/```(?:json)?\s*([\s\S]*?)```/);if(m){try{return JSON.parse(m[1])}catch(e){}}
@@ -585,120 +712,165 @@ function parseJSON(s){
   throw {code:'json'};
 }
 async function askClaude(prompt){
-  const c=cfg();
-  let r;
+  const c=cfg();let r;
   try{
     r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{
       'content-type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:c.model,max_tokens:1500,messages:[{role:'user',content:prompt}]})});
   }catch(e){throw {code:'net'};}
   let j=null;try{j=await r.json()}catch(e){}
-  if(!r.ok){throw {code:'claude',status:r.status,msg:(j&&j.error&&j.error.message)||''};}
+  if(!r.ok)throw {code:'claude',status:r.status,msg:(j&&j.error&&j.error.message)||''};
   return parseJSON((j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(''));
 }
 function claudeError(e){
   if(e.code==='net')return 'Sem internet. Confira a conexão e tente de novo.';
   if(e.code==='json')return 'Não entendi direito. Tente falar em frases curtas.';
-  if(e.status===401)return 'A chave do Claude não funcionou. Confira em Configurações.';
+  if(e.status===401)return 'A chave do Claude não funcionou. Confira em Ajustes → Chaves de acesso.';
   if(e.status===400&&/credit|balance/i.test(e.msg))return 'Sua conta da API do Claude está sem créditos. Adicione em console.anthropic.com → Billing.';
-  if(e.status===404||(e.status===400&&/model/i.test(e.msg)))return 'O modelo "'+cfg().model+'" não foi encontrado. Troque o nome em Configurações.';
+  if(e.status===404||(e.status===400&&/model/i.test(e.msg)))return 'O modelo "'+cfg().model+'" não foi encontrado. Troque em Ajustes → Chaves de acesso.';
   if(e.status===429)return 'Muitos pedidos seguidos. Espere um minuto.';
   if(e.status===529||e.status>=500)return 'O Claude está sobrecarregado agora. Tente de novo em instantes.';
   return 'Algo falhou ao organizar'+(e.msg?': '+e.msg:'.');
 }
+function normalize(r){
+  const out={
+    eventos:(Array.isArray(r&&r.eventos)?r.eventos:[]).filter(e=>e&&e.titulo&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(e.inicio||'')),
+    tarefas:(Array.isArray(r&&r.tarefas)?r.tarefas:[]).filter(t=>t&&t.titulo)
+  };
+  for(const e of out.eventos){
+    e.inicio=e.inicio.slice(0,16)+':00';
+    e.fim=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(e.fim||'')?e.fim.slice(0,16)+':00':'';
+    if(!e.fim||e.fim<=e.inicio)e.fim=plusHour(e.inicio);
+    e.divisao=normDiv(e.divisao);
+  }
+  for(const t of out.tarefas){if(!/^\d{4}-\d{2}-\d{2}$/.test(t.data||''))t.data=null;t.divisao=normDiv(t.divisao);}
+  return out;
+}
 
-/* ===== Organizar → conferir → salvar ===== */
-let draft=null,busy=false;
-async function organize(){
-  const text=$('dictation').value.trim();
-  if(!text||busy)return;
-  busy=true;$('organize').disabled=true;setStatus('capStatus','Organizando…');
+/* ================= Organizar e salvar direto ================= */
+let pending=null; // itens interpretados que ainda não foram salvos (Google expirado)
+let saved=[];     // o que foi salvo agora: {kind, calId, id, item}
+async function organize(text){
+  if(busy)return false;
+  busy=true;micState('busy');setStatus('capStatus','');
+  let ok=false;
   try{
-    const r=await askClaude(buildPrompt(text));
-    draft={
-      eventos:(Array.isArray(r.eventos)?r.eventos:[]).filter(e=>e&&e.titulo&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(e.inicio||'')),
-      tarefas:(Array.isArray(r.tarefas)?r.tarefas:[]).filter(t=>t&&t.titulo)
-    };
-    for(const e of draft.eventos){
-      e.inicio=e.inicio.slice(0,16)+':00';
-      e.fim=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(e.fim||'')?e.fim.slice(0,16)+':00':'';
-      if(!e.fim||e.fim<=e.inicio)e.fim=plusHour(e.inicio);
-      e.divisao=normDiv(e.divisao);
-    }
-    for(const t of draft.tarefas){if(!/^\d{4}-\d{2}-\d{2}$/.test(t.data||''))t.data=null;t.divisao=normDiv(t.divisao);}
-    if(!draft.eventos.length&&!draft.tarefas.length){draft=null;setStatus('capStatus','Não encontrei compromisso nem tarefa nesse texto.',true);}
-    else{setStatus('capStatus','');renderPreview();}
+    const items=normalize(await askClaude(buildPrompt(text)));
+    if(!items.eventos.length&&!items.tarefas.length){setStatus('capStatus','Não encontrei compromisso nem tarefa nisso. Tente de novo.',true);}
+    else{await saveItems(items);ok=true;}
   }catch(e){setStatus('capStatus',claudeError(e),true);}
-  busy=false;$('organize').disabled=false;
+  busy=false;micState('idle');
+  return ok;
 }
-$('organize').onclick=organize;
-
-function renderPreview(){
-  const list=$('pvList');list.replaceChildren();
-  draft.eventos.forEach((e,i)=>list.append(pvItem('Agenda',e,`${dayLabel(e.inicio.slice(0,10))} · ${e.inicio.slice(11,16)}–${e.fim.slice(11,16)}`+(e.local?' · '+e.local:''),()=>{draft.eventos.splice(i,1);afterRemove();})));
-  draft.tarefas.forEach((t,i)=>list.append(pvItem('Tarefa',t,t.data?dayLabel(t.data):'Sem data',()=>{draft.tarefas.splice(i,1);afterRemove();})));
-  $('preview').hidden=false;$('pvSave').disabled=false;
-  $('preview').scrollIntoView({behavior:'smooth',block:'nearest'});
+function eventBody(e){
+  const c=catByName(e.divisao);
+  const body={summary:e.titulo,start:{dateTime:e.inicio,timeZone:TZ},end:{dateTime:e.fim,timeZone:TZ},
+    reminders:{useDefault:false,overrides:[{method:'popup',minutes:60},{method:'popup',minutes:15}]},
+    extendedProperties:{private:{meuDia:'evento',divisao:c?c.nome:''}}};
+  if(e.local)body.location=e.local;if(e.obs)body.description=e.obs;
+  if(c&&GCOLORS[c.cor])body.colorId=c.cor;
+  return body;
 }
-function afterRemove(){if(!draft.eventos.length&&!draft.tarefas.length){draft=null;$('preview').hidden=true;}else renderPreview();}
-let pvSeq=0;
-function pvItem(kind,item,meta,onRemove){
-  const d=el('div','pv-item'),b=el('div','body');
-  b.append(el('div','pv-kind',kind),el('div','pv-title',item.titulo),el('div','meta',meta));
-  // Divisão: o Claude sugere, você pode trocar aqui antes de salvar.
-  const sel=document.createElement('select');sel.className='pv-div';sel.id='pv-div-'+(pvSeq++);
-  sel.setAttribute('aria-label','Divisão de '+item.titulo);
-  const none=document.createElement('option');none.value='';none.textContent=NONE;sel.append(none);
-  for(const c of cats()){const o=document.createElement('option');o.value=c.nome;o.textContent=c.nome;sel.append(o);}
-  sel.value=item.divisao||'';
-  const dot=dotFor(item.divisao);dot.style.marginRight='6px';
-  sel.onchange=()=>{item.divisao=sel.value||null;const c=colorOf(item.divisao);dot.style.background=c||'';};
-  const row=el('div');row.style.cssText='display:flex;align-items:center;margin-top:6px';
-  sel.style.marginTop='0';row.append(dot,sel);b.append(row);
-  const x=el('button','x','×');x.type='button';x.setAttribute('aria-label','Remover '+item.titulo);x.onclick=onRemove;
-  d.append(b,x);return d;
+function taskBody(t){
+  const d=t.data||today(),c=catByName(t.divisao);
+  const body={summary:t.titulo,description:t.obs||'',start:{date:d},end:{date:addDays(d,1)},transparency:'transparent',
+    reminders:{useDefault:false,overrides:[]},extendedProperties:{private:{meuDia:'tarefa',semData:t.data?'0':'1',divisao:c?c.nome:''}}};
+  if(c&&GCOLORS[c.cor])body.colorId=c.cor;
+  return body;
 }
-$('pvCancel').onclick=()=>{draft=null;$('preview').hidden=true;};
-$('pvSave').onclick=async()=>{
-  if(!draft)return;
-  $('pvSave').disabled=true;
-  if(!validToken()){try{await loginGoogle();}catch(e){$('pvSave').disabled=false;setStatus('capStatus','Conecte o Google Agenda para salvar.',true);return;}}
-  setStatus('capStatus','Salvando…');
-  const fails=[];let okE=0,okT=0;
-  for(const e of draft.eventos){
-    const body={summary:e.titulo,start:{dateTime:e.inicio,timeZone:TZ},end:{dateTime:e.fim,timeZone:TZ},
-      reminders:{useDefault:false,overrides:[{method:'popup',minutes:60},{method:'popup',minutes:15}]}};
-    if(e.local)body.location=e.local;if(e.obs)body.description=e.obs;
-    const ce=catByName(e.divisao);
-    body.extendedProperties={private:{meuDia:'evento',divisao:ce?ce.nome:''}};
-    if(ce&&GCOLORS[ce.cor])body.colorId=ce.cor;
-    try{await gapi('/calendars/primary/events',{method:'POST',body:JSON.stringify(body)});okE++;}catch(err){fails.push(e.titulo);}
+async function saveItems(items){
+  if(!validToken()){pending=items;showResult();return;}
+  pending=null;saved=[];const fails=[];
+  for(const e of items.eventos){
+    try{const r=await gapi('/calendars/primary/events',{method:'POST',body:JSON.stringify(eventBody(e))});saved.push({kind:'evento',calId:'primary',id:r.id,item:e});}
+    catch(err){fails.push(e.titulo);}
   }
-  for(const t of draft.tarefas){
-    const d=t.data||today();
-    const body={summary:t.titulo,description:t.obs||'',start:{date:d},end:{date:addDays(d,1)},transparency:'transparent',
-      reminders:{useDefault:false,overrides:[]},extendedProperties:{private:{meuDia:'tarefa',semData:t.data?'0':'1',divisao:''}}};
-    const ct=catByName(t.divisao);
-    if(ct){body.extendedProperties.private.divisao=ct.nome;if(GCOLORS[ct.cor])body.colorId=ct.cor;}
-    try{await withTasksCal(id=>gapi('/calendars/'+encodeURIComponent(id)+'/events',{method:'POST',body:JSON.stringify(body)}));okT++;}catch(err){fails.push(t.titulo);}
+  for(const t of items.tarefas){
+    try{const r=await withTasksCal(async id=>{const x=await gapi(calPath(id),{method:'POST',body:JSON.stringify(taskBody(t))});x._cal=id;return x;});saved.push({kind:'tarefa',calId:r._cal,id:r.id,item:t});}
+    catch(err){fails.push(t.titulo);}
   }
-  draft=null;$('preview').hidden=true;
-  const parts=[];if(okE)parts.push(okE+(okE>1?' compromissos':' compromisso'));if(okT)parts.push(okT+(okT>1?' tarefas':' tarefa'));
-  if(fails.length)setStatus('capStatus',(parts.length?'Salvei '+parts.join(' e ')+'. ':'')+'Não consegui salvar: '+fails.join(', ')+'. Confira a agenda antes de tentar de novo.',true);
-  else{setStatus('capStatus','');$('dictation').value='';toast('Salvei '+parts.join(' e ')+'.');}
+  $('liveText').textContent='';
+  if(fails.length)setStatus('capStatus','Não consegui salvar: '+fails.join(', ')+'.',true);
+  showResult();
+  loadAll();
+}
+$('pendingSave').onclick=async()=>{
+  if(!pending)return;
+  try{await loginGoogle();}catch(e){toast(loginErr(e));return;}
+  const p=pending;$('pendingSave').disabled=true;await saveItems(p);$('pendingSave').disabled=false;
+};
+function whenText(kind,it){
+  if(kind==='evento')return `${dayLabel(it.inicio.slice(0,10))} · ${it.inicio.slice(11,16)}–${it.fim.slice(11,16)}`+(it.local?' · '+it.local:'');
+  return it.data?dayLabel(it.data):'Sem data';
+}
+function showResult(){
+  const box=$('result'),list=$('resultList');list.replaceChildren();
+  const isPending=!!pending;
+  const rows=isPending
+    ?[...pending.eventos.map(item=>({kind:'evento',item})),...pending.tarefas.map(item=>({kind:'tarefa',item}))]
+    :saved;
+  if(!rows.length){box.hidden=true;return;}
+  const nE=rows.filter(r=>r.kind==='evento').length,nT=rows.length-nE;
+  const parts=[];if(nE)parts.push(nE+(nE>1?' compromissos':' compromisso'));if(nT)parts.push(nT+(nT>1?' tarefas':' tarefa'));
+  $('resultTitle').textContent=(isPending?'Pronto para salvar: ':'Salvo: ')+parts.join(' e ');
+  $('undoAll').hidden=isPending;$('pendingRow').hidden=!isPending;
+  for(const r of rows){
+    const li=el('li','item');
+    const ico=el('span','ico');ico.innerHTML=r.kind==='evento'?ICON_CAL:ICON_TASK;
+    const b=el('div','body');
+    b.append(el('div','ttl',r.item.titulo),el('div','meta',(r.kind==='evento'?'Agenda · ':'Tarefa · ')+whenText(r.kind,r.item)));
+    // Trocar a divisão depois de salvo
+    const row=el('div','div-select');const dot=dotFor(r.item.divisao);
+    const sel=document.createElement('select');sel.id='rs-'+Math.random().toString(36).slice(2,8);sel.setAttribute('aria-label','Divisão de '+r.item.titulo);
+    const none=document.createElement('option');none.value='';none.textContent=NONE;sel.append(none);
+    for(const c of cats()){const o=document.createElement('option');o.value=c.nome;o.textContent=c.nome;sel.append(o);}
+    sel.value=r.item.divisao||'';
+    sel.onchange=async()=>{
+      const prev=r.item.divisao;r.item.divisao=sel.value||null;dot.style.background=colorOf(r.item.divisao)||'';
+      if(isPending||!r.id)return;
+      sel.disabled=true;
+      try{await moveDivision(r);loadAll();}
+      catch(e){r.item.divisao=prev;sel.value=prev||'';dot.style.background=colorOf(prev)||'';toast('Não consegui trocar a divisão.');}
+      sel.disabled=false;
+    };
+    row.append(dot,sel);b.append(row);
+    li.append(ico,b);
+    if(!isPending){
+      const x=el('button','x','Desfazer');x.type='button';x.setAttribute('aria-label','Desfazer '+r.item.titulo);
+      x.onclick=async()=>{x.disabled=true;try{await undoOne(r);li.classList.add('undone');x.remove();sel.disabled=true;loadAll();}catch(e){x.disabled=false;toast('Não consegui desfazer.');}};
+      li.append(x);
+    }
+    list.append(li);
+  }
+  box.hidden=false;
+}
+async function moveDivision(r){
+  const c=catByName(r.item.divisao);
+  const body={extendedProperties:{private:{divisao:c?c.nome:''}},colorId:c&&GCOLORS[c.cor]?c.cor:null};
+  await gapi(calPath(r.calId)+'/'+encodeURIComponent(r.id),{method:'PATCH',body:JSON.stringify(body)});
+}
+async function undoOne(r){
+  if(r.undone)return;
+  await gapi(calPath(r.calId)+'/'+encodeURIComponent(r.id),{method:'DELETE'});r.undone=true;
+}
+$('undoAll').onclick=async()=>{
+  $('undoAll').disabled=true;let fail=0;
+  for(const r of saved){try{await undoOne(r);}catch(e){fail++;}}
+  $('undoAll').disabled=false;
+  if(fail)toast('Não consegui desfazer '+fail+' item(ns).');else{toast('Desfeito.');$('result').hidden=true;saved=[];}
   loadAll();
 };
 
-/* ===== Início ===== */
+/* ================= Início ================= */
 function boot(){
-  const c=cfg();
-  if(!c.client||!c.key){showSettings(true);setStatus('cfgStatus','Bem-vindo! Preencha os dois campos para começar.');return;}
+  paintBanners();
+  if(!configured()){showTab('ajustes');return;}
   ensureClient().catch(()=>{});
   loadAll();
-  if(new URLSearchParams(location.search).get('mic')==='1'){try{startMic();}catch(e){}}
+  if(new URLSearchParams(location.search).get('mic')==='1'){try{onMic();}catch(e){}}
 }
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&cfg().client&&validToken())loadAll();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){paintHeader();if(configured())loadAll();}});
 boot();
 </script>
 </body>

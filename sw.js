@@ -1,5 +1,5 @@
 // Guarda os arquivos do app para ele abrir rápido. Sempre tenta a versão nova primeiro.
-const CACHE = 'meudia-v2';
+const CACHE = 'meudia-v4';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
